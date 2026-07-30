@@ -1,0 +1,6 @@
+[AutoRun]
+label=AUTOPILOT
+action=Registrar equipo en Autopilot (ap.cmd)
+shell\registrar=Registrar equipo en Autopilot
+shell\registrar\command=ap.cmd
+shell=registrar

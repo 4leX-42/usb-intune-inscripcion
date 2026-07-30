@@ -1,0 +1,9 @@
+# Dependencias binarias/generadas por Setup-Usb.ps1 - no se versionan
+Autopilot/Modules/
+Autopilot/Providers/
+
+# CSVs con hardware hashes reales generados en uso
+Autopilot/Hashes/
+
+# Edge suele dejar un perfil temporal en pruebas locales
+ap-edge-profile/
