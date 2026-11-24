@@ -1,17 +1,41 @@
-# USB Intune Inscripcion
+<div align="center">
 
-USB para registrar equipos en Windows Autopilot (Intune) desde el OOBE, sin
-PSGallery, sin instalar modulos y sin depender de ventanas de login escondidas.
+# USB Intune Inscripción
 
-Los modulos de Graph y el proveedor NuGet viajan en el propio USB, asi que la
-recogida del hardware hash funciona sin internet. El CSV se guarda **siempre**
-antes de intentar subir nada: si la subida a Intune falla, el hash no se pierde.
+Registro de equipos en Windows Autopilot desde el OOBE. Sin PSGallery, sin módulos instalados, sin ventanas de login escondidas.
 
-> El USB no se ejecuta solo: AutoRun esta desactivado en pendrives desde
-> Windows 7 y el OOBE ni lee `autorun.inf`. Hay que abrir la consola a mano una
-> vez. Todo lo demas esta automatizado.
+![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-1f1f1f?style=flat-square) ![PowerShell 5.1](https://img.shields.io/badge/PowerShell-5.1_(OOBE)-1f1f1f?style=flat-square&logo=powershell&logoColor=white) ![Intune](https://img.shields.io/badge/Intune-Autopilot-c8a25a?style=flat-square)
 
-## Uso en el OOBE
+</div>
+
+## <img src="https://api.iconify.design/lucide/usb.svg?color=%238b949e" width="18" align="top"> Uso
+
+1. `SHIFT + F10` (o `FN + SHIFT + F10`) en el OOBE.
+2. `D:\ap.cmd` (la letra del USB en ese equipo).
+3. Seguir la pantalla: hash, CSV en el USB, login por device code y subida a Intune.
+
+El CSV se guarda **siempre** antes de subir: si la subida falla, el hash no se pierde. Módulos de Graph y NuGet viajan en el USB.
+
+| | |
+|---|---|
+| <img src="https://api.iconify.design/lucide/cpu.svg?color=%238b949e" width="18" align="top"> `ap.cmd` | Hash + CSV + subida (device code + Edge). Por defecto |
+| <img src="https://api.iconify.design/lucide/link.svg?color=%238b949e" width="18" align="top"> `ap-online.cmd` | Igual, subida con `Get-WindowsAutopilotInfo.ps1 -Online` (camino oficial) |
+| <img src="https://api.iconify.design/lucide/file-spreadsheet.svg?color=%238b949e" width="18" align="top"> `ap-csv.cmd` | Solo CSV. Sin login ni internet |
+
+Cuenta con **Intune Administrator** o **Global Administrator**. CSV en `Autopilot\Hashes\` (uno por equipo + `_TODOS.csv`).
+
+## <img src="https://api.iconify.design/lucide/hard-drive.svg?color=%238b949e" width="18" align="top"> Preparar el USB
+
+```powershell
+git clone https://github.com/4leX-42/usb-intune-inscripcion.git
+cd usb-intune-inscripcion
+.\Setup-Usb.ps1 -UsbPath D:\
+```
+
+Descarga módulos (~135 MB, fuera del repo) y el proveedor NuGet. PSGallery solo hace falta aquí.
+
+<details>
+<summary><img src="https://api.iconify.design/lucide/info.svg?color=%238b949e" width="18" align="top"> <b>Detalle del uso y del login</b></summary>
 
 1. `FN + SHIFT + F10` (o `SHIFT + F10`).
 2. `D:\ap.cmd` — ajusta la letra a la que tenga el USB en ese equipo.
@@ -38,16 +62,10 @@ y se abre Edge en la pagina de login con el codigo ya en la URL (`?otc=CODIGO`).
 Inicias sesion y el script sigue solo. Si Edge no arranca, deja URL y codigo en
 pantalla para el movil. La cuenta necesita **Intune Administrator** o
 **Global Administrator**.
+</details>
 
-## Lanzadores
-
-| Fichero | Que hace |
-|---|---|
-| `ap.cmd` | Flujo completo: hash + CSV + subida (device code + Edge). Por defecto. |
-| `ap-online.cmd` | Igual, delegando la subida en `Get-WindowsAutopilotInfo.ps1 -Online` (camino oficial de Microsoft). |
-| `ap-csv.cmd` | Solo genera el CSV. Sin login, sin internet. |
-
-### Parametros de `ap.cmd`
+<details>
+<summary><img src="https://api.iconify.design/lucide/sliders-horizontal.svg?color=%238b949e" width="18" align="top"> <b>Parámetros de <code>ap.cmd</code></b></summary>
 
 | Parametro | Efecto |
 |---|---|
@@ -65,39 +83,25 @@ Se combinan: `D:\ap.cmd -Unattended -GroupTag "Portatiles-ES" -NoBrowser`
 depende de ninguna ventana). `-Online` si prefieres el camino oficial de
 Microsoft o necesitas `-AddToGroup`; ahi el login es el interactivo del script
 de Microsoft, con el aviso de ventana escondida.
+</details>
 
-## Preparar el USB
-
-El repositorio no incluye los modulos (~135 MB) ni CSVs con hashes reales:
-
-```powershell
-git clone https://github.com/4leX-42/usb-intune-inscripcion.git
-cd usb-intune-inscripcion
-.\Setup-Usb.ps1 -UsbPath D:\
-```
-
-Copia lanzadores y scripts al USB y descarga (`Save-Module` / `Save-Script`)
-`Microsoft.Graph.Authentication`, `Microsoft.Graph.Groups`,
-`Microsoft.Graph.Identity.DirectoryManagement`, `WindowsAutopilotIntune`,
-`Get-WindowsAutopilotInfo.ps1` y el proveedor `NuGet`. Necesita PowerShell 5.1+
-y acceso a PSGallery **solo para preparar el USB**, no para usarlo.
-
-## Ficheros generados
+<details>
+<summary><img src="https://api.iconify.design/lucide/upload.svg?color=%238b949e" width="18" align="top"> <b>Importar y verificar en Intune</b></summary>
 
 ```
 D:\Autopilot\Hashes\<SERIE>_<fecha-hora>.csv   un CSV por equipo
 D:\Autopilot\Hashes\_TODOS.csv                 acumulado, importable de una vez
 ```
 
-## Importar y verificar en Intune
-
 `https://intune.microsoft.com` > **Devices > Windows enrollment > Devices**
 
 - **Importar:** boton `Import`, selecciona el CSV, espera unos minutos y pulsa `Sync`.
 - **Verificar:** busca por numero de serie (`wmic bios get serialnumber`). Si no
   aparece, pulsa `Sync` y refresca.
+</details>
 
-## Comandos utiles
+<details>
+<summary><img src="https://api.iconify.design/lucide/terminal.svg?color=%238b949e" width="18" align="top"> <b>Comandos útiles</b></summary>
 
 Todo esto es PowerShell 5.1, que es lo que hay en el OOBE. `wmic` sigue
 funcionando en equipos antiguos, pero ya no viene en Windows 11 24H2 en
@@ -205,8 +209,10 @@ Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Provisioning\Diagnostics\AutoPilot' |
 El nombre que se ve en Intune es el del equipo (`Device Name` de `dsregcmd`),
 no el del CSV: el CSV solo lleva serie, hash y opcionalmente group tag y
 usuario asignado.
+</details>
 
-## Notas tecnicas
+<details>
+<summary><img src="https://api.iconify.design/lucide/wrench.svg?color=%238b949e" width="18" align="top"> <b>Notas técnicas</b></summary>
 
 - El OOBE usa **Windows PowerShell 5.1**, no PowerShell 7. Todo verificado ahi.
 - El `-Online` oficial llama a `Find-PackageProvider NuGet -ForceBootstrap` si
@@ -227,3 +233,4 @@ usuario asignado.
   su propio sondeo de `deviceImportStatus`.
 - `Autopilot/Get-WindowsAutopilotInfo.ps1` es obra de Microsoft, descargado de
   PowerShell Gallery por `Setup-Usb.ps1`.
+</details>
